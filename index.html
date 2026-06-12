@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAPTOPIFY — Smart Laptop Recommendation System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="particles-canvas"></canvas>
+
+<nav class="navbar">
+  <div class="nav-logo">⚡ LAPTOPIFY</div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showSection('hero')">🏠 <span>Home</span></button>
+    <button class="nav-link" onclick="showSection('rekomendasi')">🧠 <span>Rekomendasi</span></button>
+    <button class="nav-link" onclick="showSection('dashboard')">📊 <span>Dashboard</span></button>
+    <button class="nav-link" onclick="showSection('ranking')">🏆 <span>Ranking</span></button>
+    <button class="nav-link" onclick="showSection('compare')">⚖️ <span>Compare</span></button>
+    <button class="nav-link" onclick="showSection('about')">📖 <span>About</span></button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="section active" id="hero">
+  <div class="hero-tag">✦ Powered by SAW + TOPSIS Algorithm</div>
+  <h1 class="hero-title">
+    <span class="grad">Smart Laptop</span><br>Recommendation System
+  </h1>
+  <p class="hero-sub">Temukan laptop terbaik sesuai kebutuhan dan budget kamu menggunakan metode pengambilan keputusan multi-kriteria: <strong>SAW & TOPSIS</strong>.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="showSection('rekomendasi')">🚀 Mulai Rekomendasi</button>
+    <button class="btn-secondary" onclick="showSection('ranking')">📋 Lihat Semua Laptop</button>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" data-target="117">0</div>
+      <div class="stat-label">Total Laptop</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="14">0</div>
+      <div class="stat-label">Merek</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">SAW+<br>TOPSIS</div>
+      <div class="stat-label">Metode</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="89">0</div>
+      <div class="stat-label">Akurasi %</div>
+    </div>
+  </div>
+</section>
+
+<!-- REKOMENDASI WIZARD -->
+<section class="section" id="rekomendasi">
+  <div class="wizard-container">
+    <div class="section-header">
+      <h2 class="section-title">🧠 Smart Recommendation Wizard</h2>
+      <p class="section-sub">Jawab 3 pertanyaan untuk mendapatkan rekomendasi personal</p>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="wizard-steps">
+      <div class="wstep active" id="wstep1">
+        <div class="wstep-num">1</div>
+        <div class="wstep-label">Budget</div>
+      </div>
+      <div class="wstep-line"></div>
+      <div class="wstep" id="wstep2">
+        <div class="wstep-num">2</div>
+        <div class="wstep-label">Kebutuhan</div>
+      </div>
+      <div class="wstep-line"></div>
+      <div class="wstep" id="wstep3">
+        <div class="wstep-num">3</div>
+        <div class="wstep-label">Prioritas</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <!-- Panel 1: Budget -->
+      <div class="wizard-panel active" id="panel1">
+        <span class="wlabel">💰 Budget Maksimal</span>
+        <div class="range-value" id="budget-display">Rp 10.000.000</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>Rp 8 jt</span><span>Rp 15 jt</span></div>
+          <input type="range" id="budget-slider" min="8000000" max="15000000" step="100000" value="10000000" oninput="updateBudget(this.value)">
+        </div>
+        <div class="wizard-nav">
+          <div></div>
+          <button class="btn-primary" onclick="nextPanel(2)">Selanjutnya →</button>
+        </div>
+      </div>
+
+      <!-- Panel 2: Kebutuhan -->
+      <div class="wizard-panel" id="panel2">
+        <span class="wlabel">🎯 Utama Digunakan Untuk</span>
+        <div class="radio-grid" id="use-grid">
+          <div class="radio-opt selected" onclick="selectUse(this,'kuliah')">🎓 Kuliah</div>
+          <div class="radio-opt" onclick="selectUse(this,'programming')">💻 Programming</div>
+          <div class="radio-opt" onclick="selectUse(this,'desain')">🎨 Desain Grafis</div>
+          <div class="radio-opt" onclick="selectUse(this,'video')">🎬 Editing Video</div>
+          <div class="radio-opt" onclick="selectUse(this,'gaming')">🎮 Gaming</div>
+          <div class="radio-opt" onclick="selectUse(this,'general')">📋 Umum</div>
+        </div>
+        <div class="wizard-nav">
+          <button class="btn-secondary" onclick="nextPanel(1)">← Kembali</button>
+          <button class="btn-primary" onclick="nextPanel(3)">Selanjutnya →</button>
+        </div>
+      </div>
+
+      <!-- Panel 3: Prioritas -->
+      <div class="wizard-panel" id="panel3">
+        <span class="wlabel">⚖️ Seberapa penting masing-masing kriteria?</span>
+        <div class="priority-sliders" id="priority-sliders"></div>
+        <div class="wizard-nav">
+          <button class="btn-secondary" onclick="nextPanel(2)">← Kembali</button>
+          <button class="btn-primary" onclick="runRecommendation()">🚀 Proses Rekomendasi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-icon">🤖</div>
+      <h3 style="font-size:1.2rem;margin-bottom:0.5rem">AI Sedang Menganalisis...</h3>
+      <p style="font-size:0.85rem;color:var(--text2)">Menjalankan algoritma SAW & TOPSIS</p>
+      <div class="loading-steps" id="loading-steps"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-container" style="display:none">
+      <div class="divider"></div>
+      <h3 style="font-size:1rem;color:var(--text2);margin-bottom:1.25rem;font-weight:600">🏆 Hasil Rekomendasi</h3>
+      <div id="top-result"></div>
+      <div id="other-results"></div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="section" id="dashboard">
+  <div class="section-header">
+    <h2 class="section-title">📊 Executive Dashboard</h2>
+    <p class="section-sub">Analitik komprehensif dataset laptop dengan metode SAW & TOPSIS</p>
+  </div>
+  <div class="stats-grid" style="max-width:100%;margin-bottom:1.5rem">
+    <div class="stat-card">
+      <div class="stat-num">117</div>
+      <div class="stat-label">Laptop Dianalisis</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">14</div>
+      <div class="stat-label">Merek Berbeda</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">0.863</div>
+      <div class="stat-label">Korelasi Spearman</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">≤15jt</div>
+      <div class="stat-label">Filter Harga</div>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">🏅 Top 10 Laptop – Skor Final</div>
+      <div class="chart-wrap"><canvas id="chart-top10"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🍩 Distribusi Merek</div>
+      <div class="chart-wrap"><canvas id="chart-brand"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📈 SAW vs TOPSIS Score Distribution</div>
+      <div class="chart-wrap"><canvas id="chart-scatter"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">💰 Distribusi Rentang Harga</div>
+      <div class="chart-wrap"><canvas id="chart-price"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- RANKING -->
+<section class="section" id="ranking">
+  <div class="section-header">
+    <h2 class="section-title">🏆 Ranking Interaktif</h2>
+    <p class="section-sub">Top 117 laptop hasil kalkulasi SAW + TOPSIS</p>
+  </div>
+  <div class="card">
+    <div class="tbl-controls">
+      <input type="text" class="search-input" placeholder="🔍  Cari merek atau tipe laptop..." id="search-input" oninput="filterTable()">
+      <select class="filter-select" id="brand-filter" onchange="filterTable()">
+        <option value="">Semua Merek</option>
+      </select>
+      <select class="filter-select" id="sort-select" onchange="filterTable()">
+        <option value="rank">Sort: Ranking Final</option>
+        <option value="saw">Sort: SAW Score</option>
+        <option value="topsis">Sort: TOPSIS Score</option>
+        <option value="harga_asc">Sort: Harga ↑</option>
+        <option value="harga_desc">Sort: Harga ↓</option>
+        <option value="ram">Sort: RAM</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="ranking-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Merek</th>
+            <th>Tipe</th>
+            <th>RAM</th>
+            <th>SSD</th>
+            <th>CPU</th>
+            <th>Harga</th>
+            <th>SAW</th>
+            <th>TOPSIS</th>
+            <th>Skor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ranking-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+    <div class="page-info" id="page-info" style="text-align:center;margin-top:0.5rem"></div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="section" id="compare">
+  <div class="section-header">
+    <h2 class="section-title">⚖️ Perbandingan Laptop</h2>
+    <p class="section-sub">Bandingkan hingga 3 laptop secara head-to-head</p>
+  </div>
+  <div class="card">
+    <div class="compare-grid">
+      <div><label class="wlabel">Laptop A</label><select class="compare-select" id="cmp1" onchange="runCompare()"></select></div>
+      <div><label class="wlabel">Laptop B</label><select class="compare-select" id="cmp2" onchange="runCompare()"></select></div>
+      <div><label class="wlabel">Laptop C</label><select class="compare-select" id="cmp3" onchange="runCompare()"></select></div>
+    </div>
+    <div id="compare-result"></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about">
+  <div class="content">
+    <div class="section-header">
+      <h2 class="section-title">📖 Tentang Sistem</h2>
+      <p class="section-sub">Penjelasan metodologi dan kriteria pengambilan keputusan</p>
+    </div>
+    <div class="method-grid">
+      <div class="method-card">
+        <div class="method-icon">⚖️</div>
+        <div class="method-name">Metode SAW (Simple Additive Weighting)</div>
+        <div class="method-desc">SAW bekerja dengan menormalisasi nilai setiap kriteria relatif terhadap nilai terbaik, kemudian mengalikannya dengan bobot masing-masing kriteria. Nilai akhir adalah jumlah tertimbang dari semua kriteria ternormalisasi. Metode ini sederhana, transparan, dan mudah diinterpretasikan.</div>
+      </div>
+      <div class="method-card">
+        <div class="method-icon">📐</div>
+        <div class="method-name">Metode TOPSIS (Technique for Order Preference)</div>
+        <div class="method-desc">TOPSIS memilih alternatif yang paling dekat dengan solusi ideal positif dan paling jauh dari solusi ideal negatif menggunakan jarak Euclidean. Metode ini mempertimbangkan kedua solusi ideal sekaligus, menghasilkan ranking yang lebih robust dan tahan terhadap nilai ekstrem.</div>
+      </div>
+    </div>
+    <div class="card mt2">
+      <h3 style="font-weight:700;margin-bottom:1rem">📋 Kriteria & Bobot</h3>
+      <table class="criteria-table">
+        <thead><tr><th>Kriteria</th><th>Bobot</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+        <tbody>
+          <tr><td>RAM (GB)</td><td>3/16 = 18.75%</td><td class="type-benefit">Benefit</td><td>Semakin besar semakin baik</td></tr>
+          <tr><td>Storage (GB)</td><td>2/16 = 12.50%</td><td class="type-benefit">Benefit</td><td>Semakin besar semakin baik</td></tr>
+          <tr><td>CPU Speed (GHz)</td><td>3/16 = 18.75%</td><td class="type-benefit">Benefit</td><td>Semakin tinggi semakin baik</td></tr>
+          <tr><td>Harga (Rp)</td><td>5/16 = 31.25%</td><td class="type-cost">Cost</td><td>Semakin murah semakin baik</td></tr>
+          <tr><td>Berat (kg)</td><td>2/16 = 12.50%</td><td class="type-cost">Cost</td><td>Semakin ringan semakin baik</td></tr>
+          <tr><td>Ukuran Layar</td><td>1/16 = 6.25%</td><td class="type-benefit">Benefit</td><td>Preferensi layar lebih besar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card mt2">
+      <h3 style="font-weight:700;margin-bottom:0.75rem">🔢 Skor Final</h3>
+      <p style="font-size:0.9rem;color:var(--text2);line-height:1.7">Skor final dihitung sebagai rata-rata dari SAW score dan TOPSIS score yang telah dinormalisasi ke range [0,1] menggunakan Min-Max Scaler. Formula: <strong style="color:var(--accent2)">Skor Final = (SAW_norm + TOPSIS_norm) / 2</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
