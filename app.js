@@ -17,36 +17,90 @@ let chartsInitialized = false;
   setTimeout(animateCounters, 500);
 })();
 
-// ===== PARTICLES =====
+// ===== iOS 26 PARTICLES WITH MOUSE INTERACTION =====
 (function(){
   const canvas = document.getElementById('particles-canvas');
   const ctx = canvas.getContext('2d');
-  let particles = [];
-  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+  let W, H, mouse = {x: -999, y: -999};
+  const COLORS = ['rgba(79,163,255,', 'rgba(191,127,255,', 'rgba(255,110,180,', 'rgba(64,224,208,', 'rgba(255,255,255,'];
+
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   resize();
-  window.addEventListener('resize',resize);
-  for(let i=0;i<60;i++) particles.push({
-    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-    vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3,
-    r:Math.random()*2+1, a:Math.random()
-  });
+  window.addEventListener('resize', resize);
+  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  window.addEventListener('mouseleave', () => { mouse.x = -999; mouse.y = -999; });
+
+  // Create layered particles: orbs + sparkles
+  let orbs = Array.from({length: 12}, () => ({
+    x: Math.random()*1200, y: Math.random()*800,
+    vx: (Math.random()-0.5)*0.18, vy: (Math.random()-0.5)*0.18,
+    r: Math.random()*60+30,
+    color: COLORS[Math.floor(Math.random()*COLORS.length)],
+    a: Math.random()*0.06+0.02,
+    phase: Math.random()*Math.PI*2
+  }));
+
+  let sparks = Array.from({length: 80}, () => ({
+    x: Math.random()*1200, y: Math.random()*800,
+    vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
+    r: Math.random()*1.5+0.5,
+    color: COLORS[Math.floor(Math.random()*COLORS.length)],
+    a: Math.random()*0.6+0.2,
+    pulse: Math.random()*Math.PI*2,
+    pulseSpeed: Math.random()*0.03+0.01
+  }));
+
+  let t = 0;
   function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(96,165,250,${p.a*0.5})`; ctx.fill();
-      p.x+=p.vx; p.y+=p.vy;
-      if(p.x<0||p.x>canvas.width)p.vx*=-1;
-      if(p.y<0||p.y>canvas.height)p.vy*=-1;
+    ctx.clearRect(0,0,W,H);
+    t += 0.008;
+
+    // Draw glowing orbs
+    orbs.forEach(o => {
+      o.x += o.vx; o.y += o.vy;
+      if(o.x<-o.r) o.x=W+o.r; if(o.x>W+o.r) o.x=-o.r;
+      if(o.y<-o.r) o.y=H+o.r; if(o.y>H+o.r) o.y=-o.r;
+      const breathe = 1 + 0.15*Math.sin(t*0.8 + o.phase);
+      const grad = ctx.createRadialGradient(o.x,o.y,0, o.x,o.y,o.r*breathe);
+      grad.addColorStop(0, o.color+(o.a*2)+')');
+      grad.addColorStop(1, o.color+'0)');
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.r*breathe, 0, Math.PI*2);
+      ctx.fillStyle = grad; ctx.fill();
     });
-    // draw connections
-    for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
-      const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+
+    // Draw sparkles with mouse repulsion
+    sparks.forEach(p => {
+      p.pulse += p.pulseSpeed;
+      const dx = p.x - mouse.x, dy = p.y - mouse.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < 120) {
+        const force = (120-dist)/120 * 1.5;
+        p.vx += dx/dist*force*0.08;
+        p.vy += dy/dist*force*0.08;
+      }
+      p.vx *= 0.98; p.vy *= 0.98;
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0) p.x=W; if(p.x>W) p.x=0;
+      if(p.y<0) p.y=H; if(p.y>H) p.y=0;
+
+      const alpha = p.a * (0.5 + 0.5*Math.sin(p.pulse));
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.color+alpha+')';
+      ctx.shadowBlur = 6; ctx.shadowColor = p.color+'0.8)';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Soft connections between nearby sparks
+    for(let i=0;i<sparks.length;i++) for(let j=i+1;j<sparks.length;j++){
+      const dx=sparks[i].x-sparks[j].x, dy=sparks[i].y-sparks[j].y;
       const d=Math.sqrt(dx*dx+dy*dy);
-      if(d<100){
-        ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y);
-        ctx.lineTo(particles[j].x,particles[j].y);
-        ctx.strokeStyle=`rgba(96,165,250,${(1-d/100)*0.15})`; ctx.lineWidth=1; ctx.stroke();
+      if(d<80){
+        ctx.beginPath();
+        ctx.moveTo(sparks[i].x,sparks[i].y);
+        ctx.lineTo(sparks[j].x,sparks[j].y);
+        ctx.strokeStyle=`rgba(79,163,255,${(1-d/80)*0.12})`;
+        ctx.lineWidth=0.5; ctx.stroke();
       }
     }
     requestAnimationFrame(draw);
