@@ -149,7 +149,7 @@ function updateBudget(v){
 }
 function selectUse(el, use){
   selectedUse = use;
-  document.querySelectorAll('.radio-opt').forEach(o=>o.classList.remove('selected'));
+  document.querySelectorAll('#use-grid .radio-opt').forEach(o=>o.classList.remove('selected'));
   el.classList.add('selected');
 }
 function nextPanel(n){
@@ -165,27 +165,45 @@ function nextPanel(n){
 }
 function renderPrioritySliders(){
   const usePresets = {
-    kuliah:    {harga:5,ram:3,cpu:3,storage:2,berat:2,layar:1},
+    kuliah:     {harga:5,ram:3,cpu:3,storage:2,berat:2,layar:1},
     programming:{harga:4,ram:5,cpu:4,storage:2,berat:1,layar:1},
-    desain:    {harga:3,ram:4,cpu:4,storage:4,berat:1,layar:1},
-    video:     {harga:2,ram:4,cpu:4,storage:5,berat:1,layar:1},
-    gaming:    {harga:3,ram:4,cpu:5,storage:3,berat:1,layar:1},
-    general:   {harga:5,ram:2,cpu:2,storage:2,berat:2,layar:1},
+    desain:     {harga:3,ram:4,cpu:4,storage:4,berat:1,layar:1},
+    video:      {harga:2,ram:4,cpu:4,storage:5,berat:1,layar:1},
+    gaming:     {harga:3,ram:4,cpu:5,storage:3,berat:1,layar:1},
+    general:    {harga:5,ram:2,cpu:2,storage:2,berat:2,layar:1},
   };
   priorities = {...usePresets[selectedUse]};
   const labels = {harga:'Harga Murah',ram:'RAM Besar',cpu:'CPU Cepat',storage:'Storage Besar',berat:'Ringan',layar:'Layar Besar'};
   const colors = {harga:'#f59e0b',ram:'#3b82f6',cpu:'#8b5cf6',storage:'#10b981',berat:'#f43f5e',layar:'#06b6d4'};
   const cont = document.getElementById('priority-sliders');
   cont.innerHTML = '';
-  Object.entries(priorities).forEach(([k,v])=>{
+
+  // FIX: build seluruh HTML dulu, baru set innerHTML sekali — supaya DOM tidak di-reset tiap iterasi
+  const rows = Object.keys(priorities).map(k => {
+    const v = priorities[k];
     const pct = (v/5)*100;
-    cont.innerHTML += `<div class="pslider-row">
+    return `<div class="pslider-row">
       <div class="pslider-label">${labels[k]}</div>
-      <div style="flex:1"><input type="range" min="1" max="5" value="${v}" style="width:100%" oninput="priorities['${k}']=parseInt(this.value);updatePSlider(this,'${k}','${colors[k]}')">
-        <div style="height:4px;background:${colors[k]};border-radius:2px;width:${pct}%;margin-top:4px" id="pbar_${k}"></div>
+      <div style="flex:1">
+        <input type="range" min="1" max="5" value="${v}" style="width:100%" data-key="${k}" data-color="${colors[k]}" class="prio-slider">
+        <div style="height:4px;background:${colors[k]};border-radius:2px;width:${pct}%;margin-top:4px;transition:width 0.2s" id="pbar_${k}"></div>
       </div>
       <div class="pslider-val" id="pval_${k}">${v}/5</div>
     </div>`;
+  });
+  cont.innerHTML = rows.join('');
+
+  // FIX: attach event listeners via JS, bukan inline oninput string — lebih reliable
+  cont.querySelectorAll('.prio-slider').forEach(input => {
+    input.addEventListener('input', function() {
+      const key = this.dataset.key;
+      const color = this.dataset.color;
+      priorities[key] = parseInt(this.value);
+      const bar = document.getElementById('pbar_' + key);
+      if(bar){ bar.style.width = (priorities[key]/5*100)+'%'; bar.style.background = color; }
+      const val = document.getElementById('pval_' + key);
+      if(val) val.textContent = priorities[key] + '/5';
+    });
   });
 }
 function updatePSlider(el, key, color){
@@ -201,6 +219,8 @@ function runRecommendation(){
   const loading = document.getElementById('loading-overlay');
   const results = document.getElementById('results-container');
   results.style.display='none';
+  document.getElementById('top-result').innerHTML = '';
+  document.getElementById('other-results').innerHTML = '';
   loading.classList.add('visible');
 
   const steps = [
